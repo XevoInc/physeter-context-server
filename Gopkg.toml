@@ -1,0 +1,41 @@
+required = [
+  "github.com/gogo/googleapis/google/api",
+  "github.com/gogo/protobuf/protoc-gen-gogo",
+  "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway",
+  "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger",
+  "github.com/rakyll/statik",
+  "github.com/golang/mock/mockgen",
+]
+
+[prune]
+  go-tests = true
+  unused-packages = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gogo/googleapis"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gogo/protobuf"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/grpc-ecosystem/grpc-gateway"
+
+[[constraint]]
+  name = "google.golang.org/grpc"
+  version = "1.11.0"
+
+[[constraint]]
+  name = "github.com/rakyll/statik"
+  version = "0.1.1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/golang/mock"
+
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
