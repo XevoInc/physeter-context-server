@@ -15,12 +15,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/gogo/grpc-example"
-  packages = ["statik"]
-  revision = "2cbb4353371148b4a6259cd1795363aa3c6ef180"
-
-[[projects]]
-  branch = "master"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -112,6 +106,16 @@
   revision = "739cd2db2d2fb68c640b39110c364a2ade7ef53b"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/mwitkow/go-proto-validators"
+  packages = [
+    ".",
+    "plugin",
+    "protoc-gen-govalidators"
+  ]
+  revision = "0950a79900071e9f3f5979b78078c599376422fd"
+
+[[projects]]
   name = "github.com/rakyll/statik"
   packages = [
     ".",
@@ -198,6 +202,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d3e79bdb58df744176d58480b8373a3a32c0456d9f0d87a025ef7ba80b5c7558"
+  inputs-digest = "eed82e6f2cf7056229d4d0f9e19bb17a89af3356639df80d9d4a063c2a0a8007"
   solver-name = "gps-cdcl"
   solver-version = 1

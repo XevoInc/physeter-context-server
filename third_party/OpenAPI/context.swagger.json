@@ -265,7 +265,7 @@
     }
   },
   "externalDocs": {
-    "description": "gRPC example repository",
-    "url": "https://localhost/"
+    "description": "Physeter Context Server repository",
+    "url": "https://github.com/XevoInc/physeter-context-server"
   }
 }

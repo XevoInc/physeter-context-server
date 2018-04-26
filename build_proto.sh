@@ -18,5 +18,11 @@ Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
 Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 $GOPATH/src/ \
   --swagger_out=logtostderr=true:./third_party/OpenAPI \
+  --govalidators_out=gogoimport=true,\
+Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
+Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
+Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
+$GOPATH/src \
   proto/context.proto
 

@@ -7,15 +7,15 @@ import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-option go_package = "xevo/agentserver/proto;context.v1";
+option go_package = "xevo/physeter-context-server/proto;context.v1";
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
   info: {
     version: "1.0";
   };
   external_docs: {
-    url: "https://localhost/";
-    description: "gRPC example repository";
+    url: "https://github.com/XevoInc/physeter-context-server";
+    description: "Physeter Context Server repository";
   };
   schemes: HTTPS;
 };
