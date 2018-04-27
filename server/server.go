@@ -2,23 +2,31 @@ package server
 
 import (
 	"context"
-	"sync"
+	"xevo/physeter-context-server/server/poicollector"
+	"xevo/physeter-context-server/server/ranker"
+	"xevo/physeter-context-server/server/types"
 
 	pbContext "xevo/physeter-context-server/proto"
 )
 
-type Backend struct {
-	mu *sync.RWMutex
+type Server struct {
+	c types.PoiCollector
+	r types.Ranker
 }
 
-var _ pbContext.ContextServiceServer = (*Backend)(nil)
+var _ pbContext.ContextServiceServer = (*Server)(nil)
 
-func New() *Backend {
-	return &Backend{
-		mu: &sync.RWMutex{},
+func New() *Server {
+	return &Server{
+		c: &poicollector.ZdcCollector{},
+		r: &ranker.FeatureVector{},
 	}
 }
 
-func (b *Backend) GetRecommends(c context.Context, req *pbContext.GetRecommendsRequest) (*pbContext.GetRecommendsResponse, error) {
-	return nil, nil
+func (s *Server) GetRecommends(c context.Context, req *pbContext.GetRecommendsRequest) (*pbContext.GetRecommendsResponse, error) {
+	pois, err := s.c.Collect(req)
+	if err != nil {
+		return nil, err
+	}
+	return s.r.Rank(pois)
 }

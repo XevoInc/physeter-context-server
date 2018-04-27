@@ -180,6 +180,19 @@
     }
   },
   "definitions": {
+    "PointOfInterestCategory": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "GAS_STATION",
+        "PARKING",
+        "SCHOOL",
+        "GROCERY",
+        "CAFE",
+        "RESTAURANT"
+      ],
+      "default": "UNKNOWN"
+    },
     "v1CarState": {
       "type": "object",
       "properties": {
@@ -249,8 +262,58 @@
         }
       }
     },
+    "v1GeoCoordinates": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "$ref": "#/definitions/v1Coordinates"
+        },
+        "address": {
+          "type": "string"
+        },
+        "addressCountry": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        }
+      }
+    },
     "v1GetRecommendsResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "recommends": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1PointOfInterest"
+          }
+        }
+      }
+    },
+    "v1PointOfInterest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/v1GeoCoordinates"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PointOfInterestCategory"
+          }
+        },
+        "distance": {
+          "type": "number",
+          "format": "double"
+        },
+        "score": {
+          "type": "number",
+          "format": "double"
+        }
+      }
     },
     "v1UserState": {
       "type": "object",

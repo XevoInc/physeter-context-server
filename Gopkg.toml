@@ -44,3 +44,7 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/mwitkow/go-proto-validators"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gomodule/oauth1"

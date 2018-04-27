@@ -13,6 +13,7 @@ import (
 	"github.com/gogo/gateway"
 	"github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/rakyll/statik/fs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
@@ -20,6 +21,8 @@ import (
 	"xevo/physeter-context-server/insecure"
 	pbContext "xevo/physeter-context-server/proto"
 	"xevo/physeter-context-server/server"
+	// Static files
+	_ "xevo/physeter-context-server/statik"
 )
 
 var (
@@ -38,7 +41,13 @@ func init() {
 func serveOpenAPI(mux *http.ServeMux) error {
 	mime.AddExtensionType(".svg", "image/svg+xml")
 
-	fileServer := http.FileServer(http.Dir("third_party/OpenAPI"))
+	statikFS, err := fs.New()
+	if err != nil {
+		return err
+	}
+
+	// Expose files in static on <host>/openapi-ui
+	fileServer := http.FileServer(statikFS)
 	prefix := "/openapi-ui/"
 	mux.Handle(prefix, http.StripPrefix(prefix, fileServer))
 	return nil

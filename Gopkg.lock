@@ -82,6 +82,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/gomodule/oauth1"
+  packages = ["oauth"]
+  revision = "618665f0cf72c99a68ab289314ee57992772e524"
+
+[[projects]]
+  branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = ["validator"]
   revision = "bc175326149c6c87ca6e2b9fe58cf6d2aa1036cd"
@@ -202,6 +208,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "eed82e6f2cf7056229d4d0f9e19bb17a89af3356639df80d9d4a063c2a0a8007"
+  inputs-digest = "af6119b9d19c29f628356b72b078b5af5a86d37df8e23aaade52ccb08e04e305"
   solver-name = "gps-cdcl"
   solver-version = 1

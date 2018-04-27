@@ -41,6 +41,7 @@ message GetRecommendsRequest {
 }
 
 message GetRecommendsResponse {
+  repeated PointOfInterest recommends = 1;
 }
 
 message UserState {

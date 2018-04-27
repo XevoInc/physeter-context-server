@@ -53,6 +53,13 @@ func (this *GetRecommendsRequest) Validate() error {
 	return nil
 }
 func (this *GetRecommendsResponse) Validate() error {
+	for _, item := range this.Recommends {
+		if item != nil {
+			if err := go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return go_proto_validators.FieldError("Recommends", err)
+			}
+		}
+	}
 	return nil
 }
 func (this *UserState) Validate() error {

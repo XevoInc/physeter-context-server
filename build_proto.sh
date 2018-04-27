@@ -26,3 +26,5 @@ Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types:\
 $GOPATH/src \
   proto/context.proto
 
+statik -m -f -src third_party/OpenAPI/
+
