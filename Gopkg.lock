@@ -122,6 +122,12 @@
   revision = "0950a79900071e9f3f5979b78078c599376422fd"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/najeira/jpholiday"
+  packages = ["."]
+  revision = "014651aa4a51361f1e518fe2128d3b36c38e8d0f"
+
+[[projects]]
   name = "github.com/rakyll/statik"
   packages = [
     ".",
@@ -208,6 +214,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "af6119b9d19c29f628356b72b078b5af5a86d37df8e23aaade52ccb08e04e305"
+  inputs-digest = "057c4592f479c335ec8ad4d11f602a8ec724d756a73414a2354050d8d6b87a0f"
   solver-name = "gps-cdcl"
   solver-version = 1

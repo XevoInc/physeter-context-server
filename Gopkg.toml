@@ -48,3 +48,7 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/gomodule/oauth1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/najeira/jpholiday"

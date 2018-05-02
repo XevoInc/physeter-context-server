@@ -13,5 +13,5 @@ type PoiCollector interface {
 // Ranker is the ranker of collected pois.
 type Ranker interface {
 	Name() string
-	Rank(pois []*pbContext.PointOfInterest) (*pbContext.GetRecommendsResponse, error)
+	Rank(req *pbContext.GetRecommendsRequest, pois []*pbContext.PointOfInterest) (*pbContext.GetRecommendsResponse, error)
 }

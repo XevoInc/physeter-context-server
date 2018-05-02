@@ -9,6 +9,10 @@ import (
 	pbContext "xevo/physeter-context-server/proto"
 )
 
+const (
+	defaultLimit = 10
+)
+
 type Server struct {
 	c types.PoiCollector
 	r types.Ranker
@@ -24,9 +28,33 @@ func New() *Server {
 }
 
 func (s *Server) GetRecommends(c context.Context, req *pbContext.GetRecommendsRequest) (*pbContext.GetRecommendsResponse, error) {
+	err := req.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	limit := req.Limit
+	if limit <= 0 || 100 < limit {
+		limit = defaultLimit
+	}
+
 	pois, err := s.c.Collect(req)
 	if err != nil {
 		return nil, err
 	}
-	return s.r.Rank(pois)
+	sorted, err := s.r.Rank(req, pois)
+	if err != nil {
+		return nil, err
+	}
+
+	result := sorted.Recommends
+	sorted.Recommends = result[:min(int(limit), len(result))]
+	return sorted, nil
+}
+
+func min(a, b int) int {
+	if b < a {
+		return b
+	}
+	return a
 }

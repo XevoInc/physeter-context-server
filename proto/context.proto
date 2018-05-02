@@ -5,6 +5,7 @@ package context.v1;
 import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
 import "protoc-gen-swagger/options/annotations.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option go_package = "xevo/physeter-context-server/proto;context.v1";
@@ -36,8 +37,10 @@ service ContextService {
 
 message GetRecommendsRequest {
   UserState user_state = 1;
-  CarState car_state = 2;
-  google.protobuf.Timestamp time = 3;
+  CarState car_state = 2 [(validator.field) = {msg_exists : true}];
+  google.protobuf.Timestamp time = 3 [(validator.field) = {msg_exists : true}];
+
+  int32 limit = 10;
 }
 
 message GetRecommendsResponse {
@@ -51,13 +54,13 @@ message UserState {
 
 message CarState {
   string car_id = 1;
-  Coordinates current_location = 2;
+  Coordinates current_location = 2 [(validator.field) = {msg_exists : true}];
   Coordinates destination = 3;
 
   // Percentage from 0 to 100 percent
-  float fuel_level_percentage = 4;
+  float fuel_level_percentage = 4 [(validator.field) = {float_gte: 0, float_lte: 100}];
   // Remaining range in miles
-  float range_m = 5;
+  float range_m = 5 [(validator.field) = {float_gte: 0}];
 
   int32 number_of_passengers = 6;
   float heading_deg = 7;
@@ -76,7 +79,7 @@ message Coordinates {
 }
 
 message GeoCoordinates {
-  Coordinates location = 1;
+  Coordinates location = 1 [(validator.field) = {msg_exists: true}];
   string address = 2;
   string addressCountry = 3;
   string postalCode = 4;
