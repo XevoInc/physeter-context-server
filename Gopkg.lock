@@ -2,16 +2,22 @@
 
 
 [[projects]]
+  name = "github.com/ghodss/yaml"
+  packages = ["."]
+  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/gogo/gateway"
   packages = ["."]
   revision = "6d3dfbe4e3b52add3800488f526462e69bce526a"
 
 [[projects]]
+  branch = "master"
   name = "github.com/gogo/googleapis"
   packages = ["google/api"]
-  revision = "08a7655d27152912db7aaf4f983275eaf8d128ef"
-  version = "v1.0.0"
+  revision = "b23578765ee54ff6bceff57f397d833bf4ca6869"
 
 [[projects]]
   branch = "master"
@@ -61,7 +67,7 @@
     "mockgen",
     "mockgen/model"
   ]
-  revision = "8b2eeeb0ca5f56c78bec5efde9c4a21d9201126c"
+  revision = "22bbf0ddf08105dfa364d0a2fa619dfa71014af5"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -70,6 +76,7 @@
     "proto",
     "protoc-gen-go/descriptor",
     "protoc-gen-go/generator",
+    "protoc-gen-go/generator/internal/remap",
     "protoc-gen-go/plugin",
     "ptypes",
     "ptypes/any",
@@ -77,8 +84,8 @@
     "ptypes/struct",
     "ptypes/timestamp"
   ]
-  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
-  version = "v1.0.0"
+  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -90,7 +97,7 @@
   branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = ["validator"]
-  revision = "bc175326149c6c87ca6e2b9fe58cf6d2aa1036cd"
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
 
 [[projects]]
   branch = "master"
@@ -109,7 +116,7 @@
     "runtime/internal",
     "utilities"
   ]
-  revision = "739cd2db2d2fb68c640b39110c364a2ade7ef53b"
+  revision = "dca8693bb73a63dd2ab38bef2822dd4107172c0e"
 
 [[projects]]
   branch = "master"
@@ -149,7 +156,7 @@
     "lex/httplex",
     "trace"
   ]
-  revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
+  revision = "640f4622ab692b87c2f3a94265e6f579fe38263d"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -179,7 +186,7 @@
     "googleapis/api/annotations",
     "googleapis/rpc/status"
   ]
-  revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
+  revision = "86e600f69ee4704c6efbf6a2a40a5c10700e76c2"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -210,6 +217,12 @@
   ]
   revision = "d11072e7ca9811b1100b80ca0269ac831f06d024"
   version = "v1.11.3"
+
+[[projects]]
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"

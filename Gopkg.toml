@@ -36,7 +36,6 @@ required = [
   branch = "master"
   name = "github.com/golang/mock"
 
-
 [[constraint]]
   branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
