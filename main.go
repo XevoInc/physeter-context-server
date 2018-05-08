@@ -38,20 +38,67 @@ func init() {
 	grpclog.SetLoggerV2(log)
 }
 
-// serveOpenAPI serves an OpenAPI UI on /openapi-ui/
-func serveOpenAPI(mux *http.ServeMux) error {
+func startGrpcServer(addr string) error {
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("Failed to listen: %s", err)
+	}
+	s := grpc.NewServer(
+		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
+		grpc.UnaryInterceptor(grpc_validator.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(grpc_validator.StreamServerInterceptor()),
+	)
+	pbContext.RegisterContextServiceServer(s, server.New())
+
+	// Serve gRPC Server
+	log.Info("Serving gRPC on https://", addr)
+	go func() {
+		log.Fatal(s.Serve(lis))
+	}()
+
+	return nil
+}
+
+func createGrpcGateway(addr string) (*runtime.ServeMux, error) {
+	// See https://github.com/grpc/grpc/blob/master/doc/naming.md
+	// for gRPC naming standard information.
+	dialAddr := fmt.Sprintf("passthrough://localhost/%s", addr)
+	conn, err := grpc.DialContext(
+		context.Background(),
+		dialAddr,
+		grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(insecure.CertPool, "")),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to dial server: %s", err)
+	}
+
+	jsonpb := &gateway.JSONPb{
+		EmitDefaults: true,
+		Indent:       "  ",
+		OrigName:     true,
+	}
+	gwmux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
+		// This is necessary to get error details properly
+		// marshalled in unary requests.
+		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
+	)
+	err = pbContext.RegisterContextServiceHandler(context.Background(), gwmux, conn)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to register gateway: %s", err)
+	}
+	return gwmux, nil
+}
+
+func createStaticFS() (http.Handler, error) {
 	mime.AddExtensionType(".svg", "image/svg+xml")
 
 	statikFS, err := fs.New()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("Failed to serve static files: %s", err)
 	}
-
-	// Expose files in static on <host>/openapi-ui
-	fileServer := http.FileServer(statikFS)
-	prefix := "/openapi-ui/"
-	mux.Handle(prefix, http.StripPrefix(prefix, fileServer))
-	return nil
+	return http.FileServer(statikFS), nil
 }
 
 // allowCORS allows Cross Origin Resoruce Sharing from any origin.
@@ -81,59 +128,25 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 	addr := fmt.Sprintf("localhost:%d", *gRPCPort)
-	lis, err := net.Listen("tcp", addr)
+
+	err := startGrpcServer(addr)
 	if err != nil {
-		log.Fatalln("Failed to listen:", err)
+		log.Fatalln(err)
 	}
-	s := grpc.NewServer(
-		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
-		grpc.UnaryInterceptor(grpc_validator.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(grpc_validator.StreamServerInterceptor()),
-	)
-	pbContext.RegisterContextServiceServer(s, server.New())
 
-	// Serve gRPC Server
-	log.Info("Serving gRPC on https://", addr)
-	go func() {
-		log.Fatal(s.Serve(lis))
-	}()
-
-	// See https://github.com/grpc/grpc/blob/master/doc/naming.md
-	// for gRPC naming standard information.
-	dialAddr := fmt.Sprintf("passthrough://localhost/%s", addr)
-	conn, err := grpc.DialContext(
-		context.Background(),
-		dialAddr,
-		grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(insecure.CertPool, "")),
-		grpc.WithBlock(),
-	)
+	gwmux, err := createGrpcGateway(addr)
 	if err != nil {
-		log.Fatalln("Failed to dial server:", err)
+		log.Fatalln(err)
+	}
+
+	statik, err := createStaticFS()
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	mux := http.NewServeMux()
-
-	jsonpb := &gateway.JSONPb{
-		EmitDefaults: true,
-		Indent:       "  ",
-		OrigName:     true,
-	}
-	gwmux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
-		// This is necessary to get error details properly
-		// marshalled in unary requests.
-		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
-	)
-	err = pbContext.RegisterContextServiceHandler(context.Background(), gwmux, conn)
-	if err != nil {
-		log.Fatalln("Failed to register gateway:", err)
-	}
-
-	mux.Handle("/", gwmux)
-	err = serveOpenAPI(mux)
-	if err != nil {
-		log.Fatalln("Failed to serve OpenAPI UI")
-	}
+	mux.Handle("/api/", gwmux)
+	mux.Handle("/", http.StripPrefix("/", statik))
 
 	gatewayAddr := fmt.Sprintf("localhost:%d", *gatewayPort)
 	log.Info("Serving gRPC-Gateway on https://", gatewayAddr)

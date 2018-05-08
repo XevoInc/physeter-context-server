@@ -1,6 +1,5 @@
 # Physeter Context Server
 
-
 # Development
 
 ## Prepare
@@ -46,6 +45,7 @@ go build main.go
 
 ```sh
 ./main
+open https://localhost:11000/
 ```
 
 ### show API document

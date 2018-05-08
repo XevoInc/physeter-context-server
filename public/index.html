@@ -1,0 +1,302 @@
+<html>
+    <head>
+        <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.2/mapbox-gl.js'></script>
+        <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.2/mapbox-gl.css' rel='stylesheet' />
+    </head>
+    <body>
+        <div>
+        <label>Date and time: <input id="date" type="datetime-local"></label>
+        <label>Fuel: <input id="fuel" type="range" min="0" max="100"/></label>
+        <label>Passengers: <input id="passenger" type="number" min="1" max="10" value="1"/></label>
+        <label>Jump to: <select id="jump">
+            <option value=""></option>
+            <option value="XevoKK">Xevo K.K.</option>
+            <option value="Ebisu">Ebisu Station</option>
+            <option value="Shibuya">Shibuya Station</option>
+        </select></label>
+        </div>
+        <div id="status"></div>
+        <div id='map' style='width: 800px; height: 600px;'></div>
+        <div id="list"></div>
+    </body>
+
+<script type="text/javascript">
+"use strict";
+
+mapboxgl.accessToken = 'pk.eyJ1IjoiYW1vcmlubyIsImEiOiJkODQ3MTI2YjBlMTJhZTRmYzIwMDhjYTY1OThiZmExZCJ9.TuMkRWoKBzfRx4nJUx9i8Q';
+
+const places = {
+    XevoKK: { lat: 35.6505, lng: 139.7099 },
+    Ebisu: { lat: 35.6466, lng: 139.7102 },
+    Shibuya: { lat: 35.6591, lng: 139.7007 },
+}
+
+const startPosition = places['XevoKK'];
+const dateInput = document.getElementById("date");
+const fuelInput = document.getElementById("fuel");
+const passengerInput = document.getElementById("passenger");
+const jumpElement = document.getElementById("jump");
+const status = document.getElementById("status");
+const listElement = document.getElementById("list");
+
+let isLoading = false;
+let vehiclePointer;
+let map;
+
+function jump(e) {
+    const place = places[e.target.value];
+    if (place) {
+        vehiclePointer.setLocation(place);
+        map.flyTo({center: [place.lng, place.lat], zoom: 14, speed: 2});
+    }
+}
+
+function initialize(lngLat) {
+    dateInput.addEventListener("input", updateStatus);
+    fuelInput.addEventListener("input", updateStatus);
+    passengerInput.addEventListener("input", updateStatus);
+    jumpElement.addEventListener("input", jump);
+
+    // https://stackoverflow.com/questions/12413243/javascript-date-format-like-iso-but-local
+    function localISOtime(date) {
+        const tzoffset = date.getTimezoneOffset() * 60000
+        return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, 16);
+    }
+    dateInput.value = localISOtime(new Date());
+
+    map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v9',
+        center: [lngLat.lng, lngLat.lat],
+        zoom: 14,
+    });
+
+    var nav = new mapboxgl.NavigationControl();
+    map.addControl(nav, 'top-left');
+
+    const geoLocate = new mapboxgl.GeolocateControl({
+        positionOptions: {
+            enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+        showUserLocation: false,
+    });
+    map.addControl(geoLocate);
+    let lastCoords;
+    geoLocate.on('geolocate', (event) => {
+        lastCoords = { lng: event.coords.longitude, lat: event.coords.latitude };
+        vehiclePointer.setLocation(lastCoords);
+    });
+    geoLocate.on('trackuserlocationstart', () => {
+        if (lastCoords) {
+            vehiclePointer.setLocation(lastCoords);
+        }
+    });
+
+    map.on('load', function() {
+        vehiclePointer = new VehiclePointer(map, lngLat, (newPos) => {
+            updateStatus();
+        });
+
+        map.addSource('poi-source', {
+            'type': 'geojson',
+            'data':  {
+                'type': 'FeatureCollection',
+                'features': []
+            },
+        });
+        map.addLayer({
+            'id': 'pois',
+            'type': 'symbol',
+            'source': 'poi-source',
+            'paint': {
+                'icon-color': '#ff0000', // This doesn't work
+            },
+            'layout': {
+                'icon-image': '{icon}-15',
+                'icon-size': 2,
+                'icon-allow-overlap': true,
+                "text-field": "{title}",
+                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                "text-offset": [0, 0.6],
+                "text-anchor": "top",
+            }
+        });
+        updateStatus();
+    });
+}
+
+// https://www.mapbox.com/mapbox-gl-js/example/drag-a-point/
+class VehiclePointer {
+
+    constructor(map, lngLat, onChanged) {
+        this.onChanged = onChanged;
+        this.map = map;
+        this.lngLat = lngLat;
+
+        const canvas = map.getCanvasContainer();
+
+        map.addSource('point-source', {
+            "type": "geojson",
+            "data": this._pointerFeature(lngLat),
+        });
+
+        map.addLayer({
+            "id": "point",
+            "type": "symbol",
+            "source": "point-source",
+            "layout": {
+                "icon-image": "car-15",
+                "icon-size": 4,
+                'icon-allow-overlap': true,
+            }
+        });
+
+        map.on('mouseenter', 'point', function() {
+            canvas.style.cursor = 'move';
+            map.dragPan.disable();
+        });
+
+        map.on('mouseleave', 'point', function() {
+            canvas.style.cursor = '';
+            map.dragPan.enable();
+        });
+
+        const mouseDown = () => {
+            canvas.style.cursor = 'grab';
+            map.on('mousemove', onMove);
+            map.once('mouseup', onUp);
+        }
+
+        const onMove = (e) => {
+            const coords = e.lngLat;
+            canvas.style.cursor = 'grabbing';
+            this._setLocation(e.lngLat);
+        }
+
+        const onUp = (e) => {
+            const coords = e.lngLat;
+            canvas.style.cursor = '';
+            map.off('mousemove', onMove);
+            this.onChanged(coords);
+        }
+
+        map.on('mousedown', 'point', mouseDown);
+    }
+
+    _pointerFeature(lngLat) {
+        return {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [lngLat.lng, lngLat.lat]
+            },
+        };
+    }
+
+    _setLocation(lngLat) {
+        this.lngLat = lngLat;
+        this.map.getSource('point-source').setData(this._pointerFeature(lngLat));
+    }
+
+    setLocation(lngLat) {
+        this._setLocation(lngLat);
+        this.onChanged(lngLat);
+    }
+
+    getLocation() {
+        return this.lngLat;
+    }
+}
+
+async function updateStatus() {
+    if (isLoading) return;
+    isLoading = true;
+    const date = new Date(dateInput.value)
+    const fuel = fuelInput.value;
+    const passengers = passengerInput.value;
+
+    // Show loading... if it waits more than 200ms
+    setTimeout(() => {
+        if (isLoading) {
+            status.innerHTML = 'loading...';
+            listElement.innerHTML = 'loading...';
+        }
+    }, 200);
+
+    const hours = date.getHours();
+    if (isNaN(hours)) {
+        console.error("updateStatus: Invalid Date");
+        isLoading = false;
+        return;
+    }
+
+    try {
+        const position = vehiclePointer.getLocation();
+        const json = await fetchRecommends(position, fuel, passengers, date.toISOString());
+
+        status.innerHTML = `Success to fetch: date: ${date}, fuel: ${fuel}%, passengers: ${passengers}, coordinates: ${position.lat}, ${position.lng}`;
+        showList(json.recommends);
+        showMapPins(map, json.recommends);
+        isLoading = false;
+    } catch (err) {
+        isLoading = false;
+        console.error(err);
+    }
+}
+
+function fetchRecommends(position, fuel, passengers, datetime) {
+    const url = '/api/v1/recommends';
+    const params = new URLSearchParams();
+    const obj = {
+        'car_state.current_location.latitude': position.lat,
+        'car_state.current_location.longitude': position.lng,
+        'car_state.fuel_level_percentage': fuel,
+        'car_state.number_of_passengers': passengers,
+        time: datetime,
+    };
+    Object.keys(obj).forEach((key) => params.append(key, obj[key]));
+    return fetch(url + '?' + params.toString()).then((res) => res.json());
+}
+
+function showList(items) {
+    const ul = document.createElement('ul');
+    items.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item.name;
+        ul.appendChild(li);
+    });
+
+    while (listElement.childElementCount > 0) {
+        listElement.removeChild(listElement.firstChild);
+    }
+    listElement.appendChild(ul);
+}
+
+function showMapPins(map, pois) {
+    function getCoordinates(item) {
+        const loc = item.coordinates.location;
+        return [loc.longitude, loc.latitude];
+    }
+    const features = pois.map((item) => ({
+        type: 'Feature',
+        geometry: {
+            type: 'Point',
+            coordinates: getCoordinates(item),
+        },
+        properties: {
+            title: item.name,
+            icon: 'star',
+        }
+    }));
+    const stores = {
+        "type": "FeatureCollection",
+        "features": features,
+    };
+    map.getSource('poi-source').setData(stores);
+}
+
+initialize(startPosition);
+
+</script>
+</html>
