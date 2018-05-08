@@ -42,11 +42,11 @@
     "plugin/union",
     "plugin/unmarshal",
     "proto",
-    "protoc-gen-gogo",
     "protoc-gen-gogo/descriptor",
     "protoc-gen-gogo/generator",
     "protoc-gen-gogo/grpc",
     "protoc-gen-gogo/plugin",
+    "protoc-gen-gogoslick",
     "sortkeys",
     "types",
     "vanity",
@@ -227,6 +227,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "057c4592f479c335ec8ad4d11f602a8ec724d756a73414a2354050d8d6b87a0f"
+  inputs-digest = "6eedabfb32b25c44cd05a05fb55c83730a3aea72a2232cd6d6e91db2939d8dad"
   solver-name = "gps-cdcl"
   solver-version = 1

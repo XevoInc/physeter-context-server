@@ -1,5 +1,13 @@
 # Physeter Context Server
 
+## Build
+
+```sh
+docker build . -t server:latest
+docker run -p 11000:11000 server:latest
+open https://localhost:11000/
+```
+
 # Development
 
 ## Prepare
@@ -7,7 +15,7 @@
 ### Install apps from brew
 
 ```sh
-brew install go dep
+brew install go dep protobuf
 ```
 
 ### Clone src codes
