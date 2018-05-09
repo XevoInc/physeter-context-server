@@ -3,18 +3,19 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"mime"
 	"net"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/gogo/gateway"
 	"github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rakyll/statik/fs"
+	"github.com/urfave/cli"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
@@ -24,11 +25,6 @@ import (
 	"xevo/physeter-context-server/server"
 	// Static files
 	_ "xevo/physeter-context-server/statik"
-)
-
-var (
-	gRPCPort    = flag.Int("grpc-port", 10000, "The gRPC server port")
-	gatewayPort = flag.Int("gateway-port", 11000, "The gRPC-Gateway server port")
 )
 
 var log grpclog.LoggerV2
@@ -50,11 +46,37 @@ func startGrpcServer(addr string) error {
 	)
 	pbContext.RegisterContextServiceServer(s, server.New())
 
-	// Serve gRPC Server
 	log.Info("Serving gRPC on https://", addr)
-	go func() {
-		log.Fatal(s.Serve(lis))
-	}()
+	log.Fatalln(s.Serve(lis))
+
+	return nil
+}
+
+func startGatewayServer(addr string, gatewayAddr string) error {
+	gwmux, err := createGrpcGateway(addr)
+	if err != nil {
+		return err
+	}
+
+	statik, err := createStaticFS()
+	if err != nil {
+		return err
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/api/", gwmux)
+	mux.Handle("/", http.StripPrefix("/", statik))
+
+	log.Info("Serving gRPC-Gateway on https://", gatewayAddr)
+	log.Info("Serving OpenAPI Documentation on https://", gatewayAddr, "/openapi-ui/")
+	gwServer := http.Server{
+		Addr: gatewayAddr,
+		TLSConfig: &tls.Config{
+			Certificates: []tls.Certificate{insecure.Cert},
+		},
+		Handler: allowCORS(mux),
+	}
+	log.Fatalln(gwServer.ListenAndServeTLS("", ""))
 
 	return nil
 }
@@ -126,37 +148,87 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	flag.Parse()
-	addr := fmt.Sprintf("localhost:%d", *gRPCPort)
+	var (
+		gRPCHost    string
+		gRPCPort    int
+		gatewayHost string
+		gatewayPort int
+	)
 
-	err := startGrpcServer(addr)
-	if err != nil {
-		log.Fatalln(err)
+	cli.HelpFlag = cli.BoolFlag{
+		Name:  "help",
+		Usage: "show help",
 	}
 
-	gwmux, err := createGrpcGateway(addr)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	statik, err := createStaticFS()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle("/api/", gwmux)
-	mux.Handle("/", http.StripPrefix("/", statik))
-
-	gatewayAddr := fmt.Sprintf("localhost:%d", *gatewayPort)
-	log.Info("Serving gRPC-Gateway on https://", gatewayAddr)
-	log.Info("Serving OpenAPI Documentation on https://", gatewayAddr, "/openapi-ui/")
-	gwServer := http.Server{
-		Addr: gatewayAddr,
-		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{insecure.Cert},
+	app := cli.NewApp()
+	app.Name = "context-server"
+	app.Version = "0.1.0"
+	app.Usage = "start GRPC server or GRPC gateway"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "grpc-host, h",
+			Value:       "localhost",
+			Usage:       "The gRPC server `host`",
+			EnvVar:      "GRPC_HOST",
+			Destination: &gRPCHost,
 		},
-		Handler: allowCORS(mux),
+		cli.IntFlag{
+			Name:        "grpc-port, p",
+			Value:       10000,
+			Usage:       "The gRPC server `port`",
+			EnvVar:      "GRPC_PORT",
+			Destination: &gRPCPort,
+		},
+		cli.StringFlag{
+			Name:        "gateway-host, H",
+			Value:       "localhost",
+			Usage:       "The gRPC-Gateway server `host`",
+			EnvVar:      "GATEWAY_HOST",
+			Destination: &gatewayHost,
+		},
+		cli.IntFlag{
+			Name:        "gateway-port, P",
+			Value:       11000,
+			Usage:       "The gRPC-Gateway server `port`",
+			EnvVar:      "GATEWAY_PORT",
+			Destination: &gatewayPort,
+		},
 	}
-	log.Fatalln(gwServer.ListenAndServeTLS("", ""))
+
+	app.Commands = []cli.Command{
+		{
+			Name:    "grpc-server",
+			Aliases: []string{"grpc"},
+			Usage:   "start gRPC server",
+			Action: func(c *cli.Context) error {
+				addr := fmt.Sprintf("%s:%d", gRPCHost, gRPCPort)
+				err := startGrpcServer(addr)
+				if err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			Name:    "gateway-server",
+			Aliases: []string{"gateway"},
+			Usage:   "start gRPC-Gateway server",
+			Action: func(c *cli.Context) error {
+				addr := fmt.Sprintf("%s:%d", gRPCHost, gRPCPort)
+				gatewayAddr := fmt.Sprintf("%s:%d", gatewayHost, gatewayPort)
+				err := startGatewayServer(addr, gatewayAddr)
+				if err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+	}
+
+	sort.Sort(cli.FlagsByName(app.Flags))
+	sort.Sort(cli.CommandsByName(app.Commands))
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
