@@ -2,14 +2,11 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"mime"
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"sort"
 	"strings"
 
@@ -22,11 +19,11 @@ import (
 	"github.com/rakyll/statik/fs"
 	"github.com/urfave/cli"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 
 	pbContext "xevo/physeter-context-server/proto"
 	"xevo/physeter-context-server/server"
+	"xevo/physeter-context-server/utils"
 	// Static files
 	_ "xevo/physeter-context-server/statik"
 )
@@ -38,23 +35,22 @@ func init() {
 	grpclog.SetLoggerV2(log)
 }
 
-func startGrpcServer(addr string, cert *tls.Certificate) error {
+func startGrpcServer(addr string) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("Failed to listen: %s", err)
 	}
 	opt := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			utils.StreamServerInterceptor(log),
 			grpc_validator.StreamServerInterceptor(),
 			grpc_recovery.StreamServerInterceptor(),
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			utils.UnaryServerInterceptor(log),
 			grpc_validator.UnaryServerInterceptor(),
 			grpc_recovery.UnaryServerInterceptor(),
 		)),
-	}
-	if cert != nil {
-		opt = append(opt, grpc.Creds(credentials.NewServerTLSFromCert(cert)))
 	}
 	s := grpc.NewServer(opt...)
 	pbContext.RegisterContextServiceServer(s, server.New())
@@ -147,23 +143,6 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func loadCertificate(host string) (*tls.Certificate, *x509.CertPool, error) {
-	cp := x509.NewCertPool()
-	if len(host) == 0 {
-		return nil, cp, nil
-	}
-	cert, err := tls.LoadX509KeyPair(path.Join("./certificates", host+".crt"), path.Join("./certificates", host+".key"))
-	if err != nil {
-		return nil, nil, err
-	}
-	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-	if err != nil {
-		return nil, nil, err
-	}
-	cp.AddCert(cert.Leaf)
-	return &cert, cp, nil
-}
-
 func main() {
 	var (
 		gRPCHost    string
@@ -218,12 +197,8 @@ func main() {
 			Aliases: []string{"grpc"},
 			Usage:   "start gRPC server",
 			Action: func(c *cli.Context) error {
-				cert, _, err := loadCertificate(gRPCHost)
-				if err != nil {
-					return err
-				}
-				addr := fmt.Sprintf("%s:%d", gRPCHost, gRPCPort)
-				err = startGrpcServer(addr, cert)
+				addr := fmt.Sprintf(":%d", gRPCPort)
+				err := startGrpcServer(addr)
 				if err != nil {
 					return err
 				}
@@ -235,10 +210,6 @@ func main() {
 			Aliases: []string{"gateway"},
 			Usage:   "start gRPC-Gateway server",
 			Action: func(c *cli.Context) error {
-				// cert, cp, err := loadCertificate(gRPCHost)
-				// if err != nil {
-				// 	return err
-				// }
 				addr := fmt.Sprintf("%s:%d", gRPCHost, gRPCPort)
 				gatewayAddr := fmt.Sprintf("%s:%d", gatewayHost, gatewayPort)
 				err := startGatewayServer(addr, gatewayAddr)
