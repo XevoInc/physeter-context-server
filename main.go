@@ -14,6 +14,9 @@ import (
 	"strings"
 
 	"github.com/gogo/gateway"
+	"github.com/gorilla/handlers"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rakyll/statik/fs"
@@ -40,11 +43,20 @@ func startGrpcServer(addr string, cert *tls.Certificate) error {
 	if err != nil {
 		return fmt.Errorf("Failed to listen: %s", err)
 	}
-	s := grpc.NewServer(
-		grpc.Creds(credentials.NewServerTLSFromCert(cert)),
-		grpc.UnaryInterceptor(grpc_validator.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(grpc_validator.StreamServerInterceptor()),
-	)
+	opt := []grpc.ServerOption{
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_validator.StreamServerInterceptor(),
+			grpc_recovery.StreamServerInterceptor(),
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_validator.UnaryServerInterceptor(),
+			grpc_recovery.UnaryServerInterceptor(),
+		)),
+	}
+	if cert != nil {
+		opt = append(opt, grpc.Creds(credentials.NewServerTLSFromCert(cert)))
+	}
+	s := grpc.NewServer(opt...)
 	pbContext.RegisterContextServiceServer(s, server.New())
 
 	log.Info("Serving gRPC on https://", addr)
@@ -53,8 +65,8 @@ func startGrpcServer(addr string, cert *tls.Certificate) error {
 	return nil
 }
 
-func startGatewayServer(addr string, gatewayAddr string, cp *x509.CertPool, cert *tls.Certificate) error {
-	gwmux, err := createGrpcGateway(addr, cp)
+func startGatewayServer(addr string, gatewayAddr string) error {
+	gwmux, err := createGrpcGateway(addr)
 	if err != nil {
 		return err
 	}
@@ -65,37 +77,21 @@ func startGatewayServer(addr string, gatewayAddr string, cp *x509.CertPool, cert
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/api/", gwmux)
+	mux.Handle("/api/", allowCORS(gwmux))
 	mux.Handle("/", http.StripPrefix("/", statik))
 
 	log.Info("Serving gRPC-Gateway on https://", gatewayAddr)
 	log.Info("Serving OpenAPI Documentation on https://", gatewayAddr, "/openapi-ui/")
 	gwServer := http.Server{
-		Addr: gatewayAddr,
-		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{*cert},
-		},
-		Handler: allowCORS(mux),
+		Addr:    gatewayAddr,
+		Handler: handlers.CompressHandler(handlers.LoggingHandler(os.Stdout, mux)),
 	}
-	log.Fatalln(gwServer.ListenAndServeTLS("", ""))
+	log.Fatalln(gwServer.ListenAndServe())
 
 	return nil
 }
 
-func createGrpcGateway(addr string, cp *x509.CertPool) (*runtime.ServeMux, error) {
-	// See https://github.com/grpc/grpc/blob/master/doc/naming.md
-	// for gRPC naming standard information.
-	dialAddr := fmt.Sprintf("passthrough://localhost/%s", addr)
-	conn, err := grpc.DialContext(
-		context.Background(),
-		dialAddr,
-		grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(cp, "")),
-		grpc.WithBlock(),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to dial server: %s", err)
-	}
-
+func createGrpcGateway(addr string) (*runtime.ServeMux, error) {
 	jsonpb := &gateway.JSONPb{
 		EmitDefaults: true,
 		Indent:       "  ",
@@ -103,11 +99,14 @@ func createGrpcGateway(addr string, cp *x509.CertPool) (*runtime.ServeMux, error
 	}
 	gwmux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonpb),
-		// This is necessary to get error details properly
-		// marshalled in unary requests.
 		runtime.WithProtoErrorHandler(runtime.DefaultHTTPProtoErrorHandler),
 	)
-	err = pbContext.RegisterContextServiceHandler(context.Background(), gwmux, conn)
+	dialAddr := fmt.Sprintf("passthrough://localhost/%s", addr)
+	opts := []grpc.DialOption{
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+	}
+	err := pbContext.RegisterContextServiceHandlerFromEndpoint(context.Background(), gwmux, dialAddr, opts)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to register gateway: %s", err)
 	}
@@ -149,6 +148,10 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loadCertificate(host string) (*tls.Certificate, *x509.CertPool, error) {
+	cp := x509.NewCertPool()
+	if len(host) == 0 {
+		return nil, cp, nil
+	}
 	cert, err := tls.LoadX509KeyPair(path.Join("./certificates", host+".crt"), path.Join("./certificates", host+".key"))
 	if err != nil {
 		return nil, nil, err
@@ -157,7 +160,6 @@ func loadCertificate(host string) (*tls.Certificate, *x509.CertPool, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	cp := x509.NewCertPool()
 	cp.AddCert(cert.Leaf)
 	return &cert, cp, nil
 }
@@ -233,13 +235,13 @@ func main() {
 			Aliases: []string{"gateway"},
 			Usage:   "start gRPC-Gateway server",
 			Action: func(c *cli.Context) error {
-				cert, cp, err := loadCertificate(gRPCHost)
-				if err != nil {
-					return err
-				}
+				// cert, cp, err := loadCertificate(gRPCHost)
+				// if err != nil {
+				// 	return err
+				// }
 				addr := fmt.Sprintf("%s:%d", gRPCHost, gRPCPort)
 				gatewayAddr := fmt.Sprintf("%s:%d", gatewayHost, gatewayPort)
-				err = startGatewayServer(addr, gatewayAddr, cp, cert)
+				err := startGatewayServer(addr, gatewayAddr)
 				if err != nil {
 					return err
 				}

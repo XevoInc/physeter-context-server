@@ -94,9 +94,19 @@
   revision = "618665f0cf72c99a68ab289314ee57992772e524"
 
 [[projects]]
+  name = "github.com/gorilla/handlers"
+  packages = ["."]
+  revision = "90663712d74cb411cbef281bc1e08c19d1a76145"
+  version = "v1.3.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
-  packages = ["validator"]
+  packages = [
+    ".",
+    "recovery",
+    "validator"
+  ]
   revision = "c250d6563d4d4c20252cd865923440e829844f4e"
 
 [[projects]]
@@ -233,6 +243,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9bdc236ce308ac441fefffdeb856e016a5d069f402c90a5a453ef277c0841d93"
+  inputs-digest = "7bc81a32332f049cffad4c66dafa315ad3db24813cdbd5e8ffa2064e34438d0b"
   solver-name = "gps-cdcl"
   solver-version = 1
