@@ -33,12 +33,19 @@ GLOBAL OPTIONS:
    --version, -v                 print the version
 ```
 
-## Start Server by Docker
+## Start Server
 
 ```sh
-./scripts/build.sh
-docker-compose -f scripts/docker-compose.yml up
+go build .
+./physeter-context-server grpc &
+./physeter-context-server gateway &
 open https://localhost:11000/
+```
+
+## show API document
+
+```sh
+open https://localhost:11000/openapi-ui/
 ```
 
 # Development
@@ -81,20 +88,6 @@ go build .
 ```
 
 ## Usage
-
-### launch server
-
-```sh
-./physeter-context-server grpc &
-./physeter-context-server gateway &
-open https://localhost:11000/  # and ignore self sign certification error
-```
-
-### show API document
-
-```sh
-open https://localhost:11000/openapi-ui/
-```
 
 ### examples of REST API request
 

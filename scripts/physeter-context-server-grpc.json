@@ -1,0 +1,38 @@
+[
+  {
+      "name": "grpc",
+      "image": "059047002866.dkr.ecr.us-west-2.amazonaws.com/physeter-context-server:latest",
+      "portMappings": [
+          {
+              "containerPort": 10000,
+              "hostPort": 10000,
+              "protocol": "tcp"
+          }
+      ],
+      "essential": true,
+      "command": [
+          "/app/server",
+          "grpc"
+      ],
+      "environment": [
+          {
+              "name": "GRPC_HOST",
+              "value": ""
+          }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "workingDirectory": "/app",
+      "dockerLabels": {
+          "type": "grpc"
+      },
+      "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+              "awslogs-group": "/ecs/physeter-context-server-grpc",
+              "awslogs-region": "us-west-2",
+              "awslogs-stream-prefix": "ecs"
+          }
+      }
+  }
+]

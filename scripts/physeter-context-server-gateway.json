@@ -1,0 +1,42 @@
+[
+  {
+      "name": "gateway",
+      "image": "059047002866.dkr.ecr.us-west-2.amazonaws.com/physeter-context-server:latest",
+      "portMappings": [
+          {
+              "containerPort": 11000,
+              "hostPort": 11000,
+              "protocol": "tcp"
+          }
+      ],
+      "essential": true,
+      "command": [
+          "/app/server",
+          "gateway"
+      ],
+      "environment": [
+          {
+              "name": "GRPC_HOST",
+              "value": "physeter-context-server-60ae8257685e06fe.elb.us-west-2.amazonaws.com"
+          },
+          {
+              "name": "GATEWAY_HOST",
+              "value": ""
+          }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "workingDirectory": "/app",
+      "dockerLabels": {
+          "type": "gateway"
+      },
+      "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+              "awslogs-group": "/ecs/physeter-context-server-gateway",
+              "awslogs-region": "us-west-2",
+              "awslogs-stream-prefix": "ecs"
+          }
+      }
+  }
+]
