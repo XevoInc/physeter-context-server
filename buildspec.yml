@@ -9,7 +9,6 @@ phases:
   build:
     commands:
       - chmod +x scripts/*.sh
-      - ls -al scripts/
       - ./scripts/deploy.sh
 cache:
   paths:
