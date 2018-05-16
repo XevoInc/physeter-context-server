@@ -8,6 +8,7 @@ env:
 phases:
   build:
     commands:
+      - ls -al scripts/
       - ./scripts/deploy.sh
 cache:
   paths:
