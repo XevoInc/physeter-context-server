@@ -1,0 +1,14 @@
+version: 0.2
+
+env:
+  parameter-store:
+    key: "AWS_ACCESS_KEY_ID"
+    key: "AWS_SECRET_ACCESS_KEY"
+
+phases:
+  build:
+    commands:
+      - ./scripts/deploy.sh
+cache:
+  paths:
+    - "vendor/**/*"
