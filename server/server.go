@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"xevo/physeter-context-server/server/poicollector"
+	"xevo/physeter-context-server/server/poicollector/tomtom"
 	"xevo/physeter-context-server/server/ranker"
 	"xevo/physeter-context-server/server/types"
 
@@ -22,7 +22,8 @@ var _ pbContext.ContextServiceServer = (*Server)(nil)
 
 func New() *Server {
 	return &Server{
-		c: &poicollector.ZdcCollector{},
+		// c: &poicollector.ZdcCollector{},
+		c: &tomtom.Collector{},
 		r: &ranker.FeatureVector{},
 	}
 }
