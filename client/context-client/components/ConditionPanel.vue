@@ -1,17 +1,34 @@
 <template>
   <div class="container">
-    <Card title="Condition" icon="search">
+    <Card
+      title="Condition"
+      icon="search">
 
       <Form :label-width="80">
         <FormItem label="Date and time">
-          <DatePicker type="date" v-model="date" placeholder="Select date" />
-          <TimePicker format="HH:mm" :steps="[1, 5]" v-model="time" placeholder="Select time" />
+          <DatePicker
+            v-model="date"
+            type="date"
+            placeholder="Select date" />
+          <TimePicker
+            :steps="[1, 5]"
+            v-model="time"
+            format="HH:mm"
+            placeholder="Select time" />
         </FormItem>
         <FormItem label="Fuel">
-          <Slider v-model.number="fuel" :step="5" show-input />
+          <Slider
+            v-model.number="fuel"
+            :step="5"
+            show-input />
         </FormItem>
         <FormItem label="Passengers">
-          <Slider v-model.number="passenger" :min="1" :max="6" show-input show-stops />
+          <Slider
+            v-model.number="passenger"
+            :min="1"
+            :max="6"
+            show-input
+            show-stops />
         </FormItem>
       </Form>
 
@@ -20,17 +37,20 @@
 </template>
 
 <script>
-import moment from 'moment'
-import { M_UPDATE_DATETIME, M_UPDATE_FUEL, M_UPDATE_PASSENGER } from '../store/condition';
-import { A_FETCH_POIS } from '../store/pois';
+import moment from 'moment';
+import {
+  M_UPDATE_DATETIME,
+  M_UPDATE_FUEL,
+  M_UPDATE_PASSENGER,
+} from '~/store/condition';
+import { A_FETCH_POIS } from '~/store/pois';
 
 const ns = 'condition/';
 const poi = 'pois/';
 
 export default {
   data() {
-    return {
-    }
+    return {};
   },
   computed: {
     date: {
@@ -38,29 +58,39 @@ export default {
         return this.$store.state.condition.datetime;
       },
       set(value) {
-        this.$store.commit(ns + M_UPDATE_DATETIME, this.mergeDateTime(value, this.time));
+        this.$store.commit(
+          ns + M_UPDATE_DATETIME,
+          this.mergeDateTime(value, this.time)
+        );
         this.sendRequest();
       },
     },
     time: {
       get() {
-        const m = moment( this.$store.state.condition.datetime );
+        const m = moment(this.$store.state.condition.datetime);
         return m.format('HH:mm');
       },
       set(value) {
-        this.$store.commit(ns + M_UPDATE_DATETIME, this.mergeDateTime(this.date, value));
+        this.$store.commit(
+          ns + M_UPDATE_DATETIME,
+          this.mergeDateTime(this.date, value)
+        );
         this.sendRequest();
       },
     },
     fuel: {
-      get() { return this.$store.state.condition.fuel; },
+      get() {
+        return this.$store.state.condition.fuel;
+      },
       set(value) {
         this.$store.commit(ns + M_UPDATE_FUEL, value);
         this.sendRequest();
       },
     },
     passenger: {
-      get() { return this.$store.state.condition.passenger; },
+      get() {
+        return this.$store.state.condition.passenger;
+      },
       set(value) {
         this.$store.commit(ns + M_UPDATE_PASSENGER, value);
         this.sendRequest();
@@ -86,7 +116,7 @@ export default {
       this.$store.dispatch(poi + A_FETCH_POIS);
     },
   },
-}
+};
 </script>
 
 <style scoped>

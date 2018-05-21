@@ -9,15 +9,25 @@ module.exports = {
   },
   extends: [
     // https://github.com/vuejs/eslint-plugin-vue#priority-a-essential-error-prevention
-    // consider switching to `plugin:vue/strongly-recommended` or `plugin:vue/recommended` for stricter rules.
-    'plugin:vue/essential'
+    'plugin:vue/recommended',
+    'plugin:prettier/recommended'
   ],
   // required to lint *.vue files
   plugins: [
-    'vue'
+    'vue',
+    'prettier'
   ],
   // add your custom rules here
   rules: {
-    "vue/no-parsing-error": [2, { "x-invalid-end-tag": false }]
+    'prettier/prettier': [
+      'error',
+      {
+        'singleQuote': true,
+        'trailingComma': 'es5',
+      }
+    ],
+    'vue/no-parsing-error': [2, {
+      'x-invalid-end-tag': false
+    }]
   }
 }

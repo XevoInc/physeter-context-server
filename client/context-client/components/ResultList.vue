@@ -1,17 +1,26 @@
 <template>
   <div class="container">
-    <Card title="Recommendation List" icon="star" :padding="0">
+    <h2>
+      <Icon type="star" />
+      Recommendation List
+    </h2>
 
-      <Table highlight-row :loading="loading" :columns="columns" :data="pois">
-        <div slot="loading">
-          <Spin>
-            <Icon type="load-c" size=18 class="spin-icon-load"></Icon>
-            <div>Loading</div>
-          </Spin>
-        </div>
-      </Table>
+    <Table 
+      :loading="loading" 
+      :columns="columns" 
+      :data="pois" 
+      highlight-row>
+      <div slot="loading">
+        <Spin>
+          <Icon 
+            type="load-c" 
+            size="18" 
+            class="spin-icon-load"/>
+          <div>Loading</div>
+        </Spin>
+      </div>
+    </Table>
 
-    </Card>
   </div>
 </template>
 
@@ -30,7 +39,7 @@ export default {
           key: 'name',
         },
         {
-          title: 'Distance',
+          title: 'Distance (m)',
           width: 120,
           key: 'distance',
         },
@@ -45,7 +54,7 @@ export default {
       return this.$store.state.pois.loading;
     },
   },
-}
+};
 </script>
 
 <style scoped>
@@ -58,8 +67,14 @@ export default {
   animation: animation-spin 1s linear infinite;
 }
 @keyframes animation-spin {
-  from { transform: rotate(0deg);}
-  50%  { transform: rotate(180deg);}
-  to   { transform: rotate(360deg);}
+  from {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

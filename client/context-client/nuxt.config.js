@@ -8,22 +8,18 @@ module.exports = {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'description', name: 'description', content: 'Nuxt.js project' }
     ],
-    link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-    ]
+    link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
   },
   loading: { color: '#3B8070' },
   build: {
-    vendor: [
-      'iview',
-    ],
-    extend (config, { isDev, isClient }) {
+    vendor: ['iview'],
+    extend(config, { isDev, isClient }) {
       config.module.rules.push({
         test: /\.vue$/,
         loader: 'iview-loader',
         options: {
           prefix: false
-        },
+        }
       });
       if (isDev && isClient) {
         config.module.rules.push({
@@ -39,11 +35,7 @@ module.exports = {
       config.externals['mapboxgl'] = 'mapboxgl';
     }
   },
-  plugins: [
-    { src: '~/plugins/iview.js', ssr: true },
-  ],
-  css: [
-    'iview/dist/styles/iview.css',
-  ],
+  plugins: [{ src: '~/plugins/iview.js', ssr: true }],
+  css: ['iview/dist/styles/iview.css'],
   cache: true
-}
+};

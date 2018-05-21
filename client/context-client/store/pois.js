@@ -23,7 +23,7 @@ export const mutations = {
 export const actions = {
   [A_FETCH_POIS]({ commit, rootState }) {
     commit(M_START_LOAD);
-    fetchRecommends(rootState.condition).then((res) => {
+    fetchRecommends(rootState.condition).then(res => {
       // console.log(JSON.stringify(res, null, 2));
       commit(M_SET, res.recommends || []);
     });
