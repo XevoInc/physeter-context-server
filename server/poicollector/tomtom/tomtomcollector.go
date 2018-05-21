@@ -23,7 +23,7 @@ const (
 	countrySet  = "US"
 )
 
-var keywords = [...]string{"parking", "petrol station", "restaurant", "school", "store"}
+var keywords = [...]string{"parking", "petrol station", "restaurant", "cafe", "school", "grocery"}
 
 // Collector retrieves POI information by TomTom Online Search API https://developer.tomtom.com/online-search/online-search-documentation/search
 type Collector struct {
@@ -140,6 +140,7 @@ func (c *Collector) Collect(req *pbContext.GetRecommendsRequest) ([]*pbContext.P
 		}
 	}
 
+	// Todo: return error
 	return pois, nil
 }
 
@@ -213,7 +214,7 @@ func tomtomconvertToPois(resp *APIResponse) []*pbContext.PointOfInterest {
 				PostalCode:     item.Address.PostalCode,
 			},
 			Categories: categories,
-			Distance:   float64(item.Dist),
+			Distance:   item.Dist,
 		}
 		result = append(result, &p)
 	}
@@ -234,7 +235,7 @@ func convertToTomTomPoiCategory(categories []string) []pbContext.PointOfInterest
 			return []pbContext.PointOfInterest_Category{pbContext.RESTAURANT}
 		case category == "school":
 			return []pbContext.PointOfInterest_Category{pbContext.SCHOOL}
-		case category == "store":
+		case category == "shop":
 			return []pbContext.PointOfInterest_Category{pbContext.GROCERY}
 		}
 	}
