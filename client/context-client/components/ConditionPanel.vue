@@ -58,6 +58,9 @@ export default {
         return this.$store.state.condition.datetime;
       },
       set(value) {
+        console.log(value);
+        console.log(this.date);
+        if (value.toString() === this.date.toString()) return;
         this.$store.commit(
           ns + M_UPDATE_DATETIME,
           this.mergeDateTime(value, this.time)
@@ -71,6 +74,7 @@ export default {
         return m.format('HH:mm');
       },
       set(value) {
+        if (value === this.time) return;
         this.$store.commit(
           ns + M_UPDATE_DATETIME,
           this.mergeDateTime(this.date, value)
@@ -83,6 +87,7 @@ export default {
         return this.$store.state.condition.fuel;
       },
       set(value) {
+        if (value === this.fuel) return;
         this.$store.commit(ns + M_UPDATE_FUEL, value);
         this.sendRequest();
       },
@@ -92,6 +97,7 @@ export default {
         return this.$store.state.condition.passenger;
       },
       set(value) {
+        if (value === this.passenger) return;
         this.$store.commit(ns + M_UPDATE_PASSENGER, value);
         this.sendRequest();
       },

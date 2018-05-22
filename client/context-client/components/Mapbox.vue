@@ -48,23 +48,28 @@ export default {
         ];
       },
       set(lnglat) {
+        const loc = this.location;
+        if (lnglat[0] === loc[0] && lnglat[1] === loc[1]) return;
         this.$store.commit(ns + M_UPDATE_LNG, lnglat[0]);
         this.$store.commit(ns + M_UPDATE_LAT, lnglat[1]);
         this.sendRequest();
+
+        this.map.panTo(lnglat);
       },
     },
   },
   mounted() {
     this.initializeMap();
+
     this.watchCancel = this.$store.watch(
       () => {
         return this.$store.state.pois.list;
       },
       value => {
-        console.log('watch callback:', value.length);
         this.updatePins(value);
       }
     );
+    this.updatePins(this.$store.state.pois.list);
   },
   beforeDestroy() {
     if (this.watchCancel) {
@@ -113,16 +118,17 @@ export default {
           map.removeLayer(myCarLayerId);
         }
 
+        const geojson = lnglat => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: lnglat,
+          },
+        });
+
         map.addSource(myCarLayerId, {
           type: 'geojson',
-          data: {
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: this.location,
-            },
-            properties: null,
-          },
+          data: geojson(this.location),
         });
         map.addLayer({
           id: myCarLayerId,
@@ -133,6 +139,43 @@ export default {
             'icon-rotation-alignment': 'map',
             'icon-size': 0.4,
           },
+        });
+
+        const canvas = map.getCanvasContainer();
+        const onMove = e => {
+          const coords = e.lngLat;
+          canvas.style.cursor = 'grabbing';
+
+          const lnglat = [coords.lng, coords.lat];
+          map.getSource(myCarLayerId).setData(geojson(lnglat));
+        };
+        const onUp = e => {
+          const coords = e.lngLat;
+
+          this.location = [coords.lng, coords.lat];
+          canvas.style.cursor = '';
+
+          map.off('mousemove', onMove);
+          map.off('touchmove', onMove);
+        };
+
+        map.on('mouseenter', myCarLayerId, () => {
+          canvas.style.cursor = 'move';
+          map.dragPan.disable();
+        });
+        map.on('mouseleave', myCarLayerId, () => {
+          canvas.style.cursor = '';
+          map.dragPan.enable();
+        });
+        map.on('mousedown', myCarLayerId, e => {
+          canvas.style.cursor = 'grab';
+          map.on('mousemove', onMove);
+          map.once('mouseup', onUp);
+        });
+        map.on('touchstart', myCarLayerId, e => {
+          if (e.points.length !== 1) return;
+          map.on('touchmove', onMove);
+          map.once('touchend', onUp);
         });
       });
     },
