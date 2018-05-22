@@ -8,6 +8,7 @@
 
 <script>
 import mycar from '~/assets/mycar.svg';
+import mapPin from '~/assets/map_marker.png';
 const myCarImageId = 'MyCarImage';
 const myCarLayerId = 'myCar';
 
@@ -31,7 +32,11 @@ export default {
   data() {
     return {
       mycar,
+      mapPin,
+
       map: null,
+      markers: [],
+      watchCancel: null,
     };
   },
   computed: {
@@ -49,9 +54,22 @@ export default {
       },
     },
   },
-  created() {},
   mounted() {
     this.initializeMap();
+    this.watchCancel = this.$store.watch(
+      () => {
+        return this.$store.state.pois.list;
+      },
+      value => {
+        console.log('watch callback:', value.length);
+        this.updatePins(value);
+      }
+    );
+  },
+  beforeDestroy() {
+    if (this.watchCancel) {
+      this.watchCancel();
+    }
   },
   methods: {
     initializeMap() {
@@ -133,6 +151,37 @@ export default {
         img.src = this.mycar;
       });
     },
+    updatePins(list) {
+      this.markers.forEach(marker => marker.remove());
+      this.markers = list.map((poi, index) => {
+        const loc = poi.coordinates.location;
+        return this.createPin(
+          [loc.longitude, loc.latitude],
+          index + 1,
+          poi.name
+        );
+      });
+    },
+    createPin(lnglat, num, name) {
+      const el = document.createElement('div');
+      el.className = 'map-marker';
+      el.style.backgroundImage = `url(${this.mapPin})`;
+      {
+        const text = document.createElement('div');
+        text.className = 'map-marker-text';
+        text.textContent = num;
+        el.appendChild(text);
+      }
+      // el.addEventListener('click', e => {
+      //   e.stopPropagation();
+      // });
+
+      const popup = new mapboxgl.Popup({ offset: 33 }).setText(name);
+      return new mapboxgl.Marker(el)
+        .setLngLat(lnglat)
+        .setPopup(popup)
+        .addTo(this.map);
+    },
 
     sendRequest() {
       this.$store.dispatch(poi + A_FETCH_POIS);
@@ -145,5 +194,21 @@ export default {
 .map {
   width: 100%;
   height: 800px;
+}
+</style>
+
+<style>
+.map-marker {
+  width: 25px;
+  height: 41px;
+  background-size: 100% 100%;
+}
+.map-marker-text {
+  position: relative;
+  width: 25px;
+  top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
 }
 </style>
