@@ -129,13 +129,12 @@ func (c *Collector) Collect(req *pbContext.GetRecommendsRequest) ([]*pbContext.P
 		go getTomTomAPIResponse(keyword, location.Latitude, location.Longitude, ch)
 	}
 
-	var responses [len(keywords)]response
 	pois := make([]*pbContext.PointOfInterest, 0)
 
-	for i := range responses {
-		responses[i] = <-ch
-		if responses[i].APIResponse != nil {
-			converted := tomtomconvertToPois(responses[i].APIResponse)
+	for range keywords {
+		res := <-ch
+		if res.APIResponse != nil {
+			converted := tomtomconvertToPois(res.APIResponse)
 			pois = append(pois, converted...)
 		}
 	}
@@ -168,20 +167,24 @@ func getTomTomAPIResponse(keyword string, latitude float64, longitude float64, c
 	fmt.Printf("Get: %s\n", remote)
 
 	resp, err := http.Get(remote)
+
 	if err != nil {
 		c <- response{nil, err}
+		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		p, _ := ioutil.ReadAll(resp.Body)
 		c <- response{nil, fmt.Errorf("get %s returned status %d, %s", resp.Request.URL, resp.StatusCode, p)}
+		return
 	}
 
 	var result APIResponse
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		c <- response{nil, err}
+		return
 	}
 	c <- response{&result, nil}
 }
