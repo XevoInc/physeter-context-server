@@ -12,6 +12,7 @@ set -ex
 
 echo " # update task definition of $FAMILY_NAME"
 DEF_FILE=`dirname $0`/${FAMILY_NAME}.json
+DEFINITION=`cat $DEF_FILE`
 aws ecs register-task-definition \
   --family $FAMILY_NAME \
   --network-mode awsvpc \
@@ -20,7 +21,7 @@ aws ecs register-task-definition \
   --memory 1024 \
   --task-role-arn "arn:aws:iam::059047002866:role/ecsTaskExecutionRole" \
   --execution-role-arn "arn:aws:iam::059047002866:role/ecsTaskExecutionRole" \
-  --container-definitions "$DEF_FILE"
+  --container-definitions "$DEFINITION"
 
 echo " # update service of $SERVICE_NAME"
 aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition $FAMILY_NAME
